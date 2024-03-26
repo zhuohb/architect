@@ -11,5 +11,7 @@ public class Test {
 
 		IOrderService instance = (IOrderService)new OrderServiceDynamicProxy().getInstance(new OrderService());
 		instance.createOrder(order);
+
+
 	}
 }
