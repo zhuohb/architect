@@ -1,4 +1,4 @@
-package org.example.proxy.example1;
+package org.example.proxy.jdkproxy;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;

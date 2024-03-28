@@ -26,3 +26,4 @@ Thumbs.db
 *.ear
 /target
 .fastRequest
+cglib_proxy_classes
