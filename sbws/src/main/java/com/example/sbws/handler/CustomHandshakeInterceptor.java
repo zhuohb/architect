@@ -10,7 +10,6 @@ import java.util.Map;
 
 /**
  * 自定义握手拦截器
- *
  */
 @Component
 public class CustomHandshakeInterceptor implements HandshakeInterceptor {
@@ -23,12 +22,14 @@ public class CustomHandshakeInterceptor implements HandshakeInterceptor {
 			// 验证失败，拒绝连接
 			return false;
 		}
-
 		// 从 Token 中提取用户信息
 		String userId = extractUserIdFromToken(token);
+		if (userId == null) {
+			return false;
+		}
+
 		// 将用户 ID 传给 WebSocketHandler
 		attributes.put("userId", userId);
-
 		// 验证成功，允许连接
 		return true;
 	}
@@ -57,6 +58,14 @@ public class CustomHandshakeInterceptor implements HandshakeInterceptor {
 	 */
 	private String extractUserIdFromToken(String token) {
 		// 实现提取逻辑
-		return "user123";
+		if ("token-zhuohb".equals(token)) {
+			return "zhuohb";
+		} else if ("token-xiasf".equals(token)) {
+			return "xiasf";
+		} else if ("token-csbld".equals(token)) {
+			return "csbld";
+		} else {
+			return null;
+		}
 	}
 }

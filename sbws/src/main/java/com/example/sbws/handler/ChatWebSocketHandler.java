@@ -18,6 +18,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
+	/**
+	 * 速率限制器,令牌桶算法
+	 * 防止服务器资源被过度消耗
+	 * 仅开发时候用,RateLimiter为beta
+	 * 生产场景应有更成熟的方案
+	 */
 	private static final RateLimiter RATE_LIMITER = RateLimiter.create(100);
 
 	/**
@@ -42,18 +48,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 	 */
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws IOException {
+		// 在连接建立之后尝试获取令牌
 		if (!RATE_LIMITER.tryAcquire()) {
 			session.close(CloseStatus.POLICY_VIOLATION);
 			return;
 		}
 
-		String token = session.getHandshakeHeaders().getFirst("Authorization");
-		if (token == null || !validateToken(token)) {
-			session.close(CloseStatus.POLICY_VIOLATION);
-			return;
-		}
-
-		String userId = extractUserIdFromToken(token);
+		// 从 session 中获取用户 ID
+		String userId = (String) session.getAttributes().get("userId");
 		ONLINE_SESSION_MAP.put(session.getId(), session);
 		USER_SESSION_MAP.put(userId, session.getId());
 		SESSION_USER_MAP.put(session.getId(), userId);
@@ -144,15 +146,5 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
 		receiverSession.sendMessage(new TextMessage("用户 " + userId + " 私聊消息: " + messageContent));
 		session.sendMessage(new TextMessage("你的私聊消息已发送给 " + receiverUserId + ": " + messageContent));
-	}
-
-	private boolean validateToken(String token) {
-		// 实现 Token 验证逻辑，例如使用 JWT
-		return true;
-	}
-
-	private String extractUserIdFromToken(String token) {
-		// 从 Token 中提取用户ID
-		return "user123";
 	}
 }
