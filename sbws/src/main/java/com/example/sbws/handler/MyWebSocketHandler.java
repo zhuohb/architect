@@ -5,6 +5,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,26 +29,40 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) {
 		System.out.println("已建立连接: " + session.getId());
-		// 将会话添加到在线集合中
+		// 从请求参数中获取 Token
+		String token = session.getHandshakeHeaders().getFirst("Authorization");
+		if (token == null || !validateToken(token)) {
+			try {
+				session.close(CloseStatus.NOT_ACCEPTABLE.withReason("未授权"));
+			} catch (IOException e) {
+				System.err.println("关闭连接时出错: " + e.getMessage());
+			}
+			return;
+		}
+		// 验证通过，记录用户会话
+		String userId = extractUserIdFromToken(token);
 		onlineSessions.put(session.getId(), session);
+		userSessionMap.put(userId, session.getId());
+		sessionUserMap.put(session.getId(), userId);
+
+		System.out.println("用户 " + userId + " 已连接");
 	}
 
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-		System.out.println("收到消息: " + message.getPayload());
-
-		// 假设消息格式为 JSON，例如: {"type":"login","userId":"user123"}
-		// 或者 {"type":"message","to":"user456","content":"Hello"}
-		// 解析消息类型并处理
-
-		// 示例：简单地根据消息内容判断消息类型
 		String payload = message.getPayload();
 		if (payload.startsWith("LOGIN:")) {
 			handleLogin(session, payload);
-		} else if (payload.startsWith("MESSAGE:")) {
-			handleMessage(session, payload);
 		} else {
-			session.sendMessage(new TextMessage("未知消息类型"));
+			// 检查用户是否已登录
+			String userId = sessionUserMap.get(session.getId());
+			if (userId == null) {
+				session.sendMessage(new TextMessage("请先登录"));
+				return;
+			}
+
+			// 处理其他消息
+			handleMessage(session, payload);
 		}
 	}
 
@@ -74,17 +89,17 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
 	 * @param payload 消息内容，例如 "LOGIN:user123"
 	 */
 	private void handleLogin(WebSocketSession session, String payload) {
-		String userId = payload.split(":")[1].trim();
-		System.out.println("用户登录: " + userId);
-
-		// 将用户ID与当前会话关联
-		userSessionMap.put(userId, session.getId());
-		sessionUserMap.put(session.getId(), userId);
-
-		// 向当前用户发送登录成功的消息
 		try {
-			session.sendMessage(new TextMessage("登录成功: " + userId));
-		} catch (Exception e) {
+			String userId = payload.split(":")[1].trim();
+			if (validateUser(userId)) {
+				userSessionMap.put(userId, session.getId());
+				sessionUserMap.put(session.getId(), userId);
+				session.sendMessage(new TextMessage("登录成功: " + userId));
+			} else {
+				session.sendMessage(new TextMessage("登录失败: 用户不存在"));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 			System.err.println("发送登录成功消息时出错: " + e.getMessage());
 		}
 	}
@@ -148,5 +163,20 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
 				System.err.println("广播消息时出错: " + e.getMessage());
 			}
 		}
+	}
+
+	private boolean validateToken(String token) {
+		// todo 实现 Token 验证逻辑
+		return true;
+	}
+
+	private String extractUserIdFromToken(String token) {
+		// todo 从 Token 中提取用户 ID
+		return "user123";
+	}
+
+	private boolean validateUser(String userId) {
+		// todo 实现用户验证逻辑
+		return true;
 	}
 }
