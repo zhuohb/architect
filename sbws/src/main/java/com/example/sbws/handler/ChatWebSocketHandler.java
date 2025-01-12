@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * 还可以扩展的方向:
  * 1.群聊
- * 2.未上线用户的消息.类似微信上线可以接收到一定时间内的消息
+ * 2.未接收的私聊消息:未上线用户的消息.类似微信上线可以接收到一定时间内的消息
  */
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
