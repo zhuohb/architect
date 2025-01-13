@@ -63,6 +63,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 		System.out.println("用户 " + userId + " 已连接");
 	}
 
+	/**
+	 * 用于处理从客户端发送的文本消息, 它是 WebSocket 通信的核心部分,允许服务器接收到客户端的消息后执行自定义的业务逻辑
+	 *
+	 * @param session
+	 * @param message
+	 * @throws Exception
+	 */
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
 		String payload = message.getPayload();
@@ -83,6 +90,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 		}
 	}
 
+	/**
+	 * 关闭连接的回调
+	 *
+	 * @param session
+	 * @param status
+	 */
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
 		ONLINE_SESSION_MAP.remove(session.getId());
